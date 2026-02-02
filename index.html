@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cửa Hàng Đơn Giản</title>
+    <style>
+        body { font-family: sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; background: #f4f4f4; }
+        .product-card { background: white; padding: 20px; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        .btn { background: #28a745; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; display: inline-block; cursor: pointer; border: none; }
+        .hidden { display: none; }
+        input, select { width: 100%; padding: 10px; margin: 10px 0; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box;}
+        #back-btn { background: #6c757d; margin-bottom: 15px; }
+    </style>
+</head>
+<body>
+
+    <div id="home-screen">
+        <h1>Sản Phẩm Nổi Bật</h1>
+        <div class="product-card">
+            <h2>Giày Thể Thao X</h2>
+            <p>Giá: 500.000 VNĐ</p>
+            <button class="btn" onclick="showDetail('Giày Thể Thao X')">Xem chi tiết & Mua</button>
+        </div>
+        <div class="product-card">
+            <h2>Áo Thun Basic</h2>
+            <p>Giá: 200.000 VNĐ</p>
+            <button class="btn" onclick="showDetail('Áo Thun Basic')">Xem chi tiết & Mua</button>
+        </div>
+    </div>
+
+    <div id="detail-screen" class="hidden">
+        <button id="back-btn" class="btn" onclick="goHome()">Quay lại</button>
+        <div class="product-card">
+            <h2 id="product-name">Tên Sản Phẩm</h2>
+            <p>Mô tả chi tiết sản phẩm: Chất liệu tốt, bền đẹp, phù hợp mọi lứa tuổi.</p>
+            <hr>
+            <h3>Đặt Mua Ngay</h3>
+            <form id="order-form">
+                <input type="hidden" name="Sản phẩm" id="form-product-name">
+                <input type="text" name="Tên khách" placeholder="Họ và tên của bạn" required>
+                <input type="tel" name="SĐT" placeholder="Số điện thoại" required>
+                <input type="number" name="Số lượng" value="1" min="1" required>
+                <button type="submit" class="btn">Gửi Đơn Hàng</button>
+            </form>
+            <p id="status-msg"></p>
+        </div>
+    </div>
+
+    <script>
+        // Thay link script của bạn vào dưới đây
+        const scriptURL = 'DÁN_LINK_GOOGLE_SCRIPT_CỦA_BẠN_VÀO_ĐÂY';
+
+        const homeScreen = document.getElementById('home-screen');
+        const detailScreen = document.getElementById('detail-screen');
+        const productNameDisplay = document.getElementById('product-name');
+        const formProductName = document.getElementById('form-product-name');
+        const form = document.forms['order-form'];
+        const statusMsg = document.getElementById('status-msg');
+
+        function showDetail(name) {
+            homeScreen.classList.add('hidden');
+            detailScreen.classList.remove('hidden');
+            productNameDisplay.innerText = name;
+            formProductName.value = name;
+        }
+
+        function goHome() {
+            detailScreen.classList.add('hidden');
+            homeScreen.classList.remove('hidden');
+            statusMsg.innerText = '';
+        }
+
+        form.addEventListener('submit', e => {
+            e.preventDefault();
+            statusMsg.innerText = 'Đang gửi đơn...';
+            
+            fetch(scriptURL, { method: 'POST', body: new FormData(form)})
+                .then(response => {
+                    statusMsg.innerText = 'Đặt hàng thành công! Shop sẽ liên hệ sớm.';
+                    form.reset();
+                })
+                .catch(error => {
+                    statusMsg.innerText = 'Lỗi! Vui lòng thử lại.';
+                    console.error('Error!', error.message);
+                });
+        });
+    </script>
+</body>
+</html>

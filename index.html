@@ -3,23 +3,26 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Cửa Hàng Động</title>
+    <title>Cửa Hàng Siêu Tốc</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
     <style>
-        body { font-family: sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; background: #f4f4f4; }
-        .product-card { background: white; padding: 20px; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); display: flex; flex-direction: column; }
-        .product-card img { max-width: 100%; height: 200px; object-fit: cover; border-radius: 4px; margin-bottom: 10px;}
-        .btn { background: #28a745; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; display: inline-block; cursor: pointer; border: none; align-self: start;}
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; background: #f4f4f4; }
+        .product-card { background: white; padding: 20px; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); display: flex; flex-direction: column; transition: transform 0.2s; }
+        .product-card:hover { transform: translateY(-2px); }
+        .product-card img { width: 100%; height: 200px; object-fit: cover; border-radius: 4px; margin-bottom: 10px; background-color: #eee;}
+        .btn { background: #28a745; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; display: inline-block; cursor: pointer; border: none; align-self: start; font-weight: bold;}
         .hidden { display: none; }
-        input, select, textarea { width: 100%; padding: 10px; margin: 10px 0; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box;}
+        input, select, textarea { width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box;}
         #back-btn { background: #6c757d; margin-bottom: 15px; }
-        .loading { text-align: center; font-size: 18px; color: #666; }
+        .loading { text-align: center; font-size: 16px; color: #666; padding: 20px; }
+        .price-tag { color: #d32f2f; font-weight: bold; font-size: 1.1em; }
     </style>
 </head>
 <body>
 
     <div id="home-screen">
         <h1>Sản Phẩm Mới Nhất</h1>
-        <div id="loading-msg" class="loading">Đang tải danh sách sản phẩm...</div>
+        <div id="loading-msg" class="loading">Đang tải sản phẩm...</div>
         <div id="product-list"></div>
     </div>
 
@@ -27,10 +30,10 @@
         <button id="back-btn" class="btn" onclick="goHome()">Quay lại</button>
         <div class="product-card">
             <h2 id="product-name">Tên Sản Phẩm</h2>
-            <h3 id="product-price" style="color: #d32f2f;"></h3>
+            <p id="product-price" class="price-tag"></p>
             <p id="product-desc">Mô tả chi tiết sản phẩm.</p>
-            <hr>
-            <h3>Đặt Mua Ngay</h3>
+            <hr style="border-top: 1px solid #eee; margin: 20px 0;">
+            <h3>Thông tin giao hàng</h3>
             <form id="order-form">
                 <input type="hidden" name="Sản phẩm" id="form-product-name">
                 <input type="text" name="Tên khách" placeholder="Họ và tên của bạn" required>
@@ -38,15 +41,20 @@
                 <input type="number" name="Số lượng" value="1" min="1" required>
                 <button type="submit" class="btn">Gửi Đơn Hàng</button>
             </form>
-            <p id="status-msg"></p>
+            <p id="status-msg" style="margin-top: 10px; font-weight: bold;"></p>
         </div>
     </div>
 
     <script>
-        // --- CẤU HÌNH ---
-        // Dán URL Apps Script mới của bạn vào đây
-        const scriptURL = 'https://script.google.com/macros/s/AKfycbymJ2XZOAd9SUkH444Qa0cKAuw1Es0-l972LJuf_wkuNi9sd8kHFV8VJ-jA90-63NJp/exec';
-        // ----------------
+        // --- CẤU HÌNH (THAY LINK VÀO ĐÂY) ---
+        
+        // 1. Link CSV (Lấy từ bước Xuất bản ra Web) - Dùng để HIỂN THỊ
+        const csvURL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vS6s4y9_SI1hcKevWCe2QngT5j5h7027tTreV691bNtuf26KsDQU2_U7zG6Z-gJy3hcXL5iCQDdE-td/pub?gid=2000325905&single=true&output=tsv';
+        
+        // 2. Link Apps Script (Cái cũ) - Chỉ dùng để GỬI ĐƠN HÀNG
+        const orderScriptURL = 'https://script.google.com/macros/s/AKfycbyhZljf1i_2WQBKxvwWsB6_ur9zY5jbf1b_ZGdf4VxiYyhP9AMG8Msr3n-B5PskxDPFew/exec';
+        
+        // ------------------------------------
 
         const homeScreen = document.getElementById('home-screen');
         const detailScreen = document.getElementById('detail-screen');
@@ -60,37 +68,44 @@
         const form = document.forms['order-form'];
         const statusMsg = document.getElementById('status-msg');
 
-        // Hàm lấy dữ liệu từ Google Sheet khi web vừa tải
+        // Khi web tải, dùng PapaParse đọc file CSV ngay lập tức
         window.addEventListener('load', () => {
-            fetch(scriptURL)
-                .then(response => response.json())
-                .then(data => {
+            if(csvURL.includes('https://docs.google.com/spreadsheets/d/e/2PACX-1vS6s4y9_SI1hcKevWCe2QngT5j5h7027tTreV691bNtuf26KsDQU2_U7zG6Z-gJy3hcXL5iCQDdE-td/pub?gid=2000325905&single=true&output=tsv')) {
+                loadingMsg.innerText = 'Bạn chưa dán link CSV vào code!';
+                return;
+            }
+
+            Papa.parse(csvURL, {
+                download: true,
+                header: true, // Để nó tự nhận dòng đầu là tên cột (Name, Price...)
+                complete: function(results) {
                     loadingMsg.style.display = 'none';
-                    renderProducts(data);
-                })
-                .catch(error => {
-                    loadingMsg.innerText = 'Lỗi tải sản phẩm. Vui lòng tải lại trang.';
-                    console.error('Error:', error);
-                });
+                    renderProducts(results.data);
+                },
+                error: function(err) {
+                    loadingMsg.innerText = 'Lỗi tải dữ liệu. Vui lòng thử lại.';
+                    console.error(err);
+                }
+            });
         });
 
-        // Hàm vẽ danh sách sản phẩm ra màn hình
         function renderProducts(products) {
-            productList.innerHTML = ''; // Xóa trắng cũ
+            productList.innerHTML = '';
             products.forEach(prod => {
-                // Nếu không có link ảnh, dùng ảnh mặc định
-                const imgUrl = prod.Image ? prod.Image : 'https://via.placeholder.com/300x200?text=No+Image';
+                // Bỏ qua các dòng trống nếu có
+                if (!prod.Name) return;
+
+                const imgUrl = prod.Image && prod.Image.startsWith('http') ? prod.Image : 'https://via.placeholder.com/300x200?text=No+Image';
                 
                 const div = document.createElement('div');
                 div.className = 'product-card';
                 div.innerHTML = `
-                    <img src="${imgUrl}" alt="${prod.Name}">
+                    <img src="${imgUrl}" alt="${prod.Name}" loading="lazy">
                     <h2>${prod.Name}</h2>
-                    <p>Giá: ${prod.Price}</p>
-                    <button class="btn">Xem & Mua</button>
+                    <p class="price-tag">${prod.Price}</p>
+                    <button class="btn">Mua Ngay</button>
                 `;
                 
-                // Gắn sự kiện click vào nút
                 div.querySelector('button').addEventListener('click', () => {
                     showDetail(prod);
                 });
@@ -102,11 +117,11 @@
         function showDetail(product) {
             homeScreen.classList.add('hidden');
             detailScreen.classList.remove('hidden');
+            window.scrollTo(0,0); // Cuộn lên đầu trang
             
             domName.innerText = product.Name;
-            domPrice.innerText = "Giá: " + product.Price;
-            domDesc.innerText = product.Desc || "Chưa có mô tả cho sản phẩm này.";
-            
+            domPrice.innerText = product.Price;
+            domDesc.innerText = product.Desc || "Thông tin đang cập nhật...";
             formProductName.value = product.Name;
         }
 
@@ -118,15 +133,18 @@
 
         form.addEventListener('submit', e => {
             e.preventDefault();
-            statusMsg.innerText = 'Đang gửi đơn...';
+            statusMsg.innerText = 'Đang gửi đơn... (Vui lòng chờ 2-3s)';
+            statusMsg.style.color = 'blue';
             
-            fetch(scriptURL, { method: 'POST', body: new FormData(form)})
+            fetch(orderScriptURL, { method: 'POST', body: new FormData(form)})
                 .then(response => {
-                    statusMsg.innerText = 'Đặt hàng thành công! Shop sẽ liên hệ sớm.';
+                    statusMsg.innerText = 'Đặt hàng thành công! Chúng tôi sẽ gọi lại ngay.';
+                    statusMsg.style.color = 'green';
                     form.reset();
                 })
                 .catch(error => {
-                    statusMsg.innerText = 'Lỗi kết nối! Vui lòng thử lại.';
+                    statusMsg.innerText = 'Có lỗi xảy ra. Hãy thử lại!';
+                    statusMsg.style.color = 'red';
                 });
         });
     </script>

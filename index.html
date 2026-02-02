@@ -49,7 +49,7 @@
         // --- CẤU HÌNH (THAY LINK VÀO ĐÂY) ---
         
         // 1. Link CSV (Lấy từ bước Xuất bản ra Web) - Dùng để HIỂN THỊ
-        const csvURL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vS6s4y9_SI1hcKevWCe2QngT5j5h7027tTreV691bNtuf26KsDQU2_U7zG6Z-gJy3hcXL5iCQDdE-td/pub?gid=2000325905&single=true&output=tsv';
+        const csvURL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vS6s4y9_SI1hcKevWCe2QngT5j5h7027tTreV691bNtuf26KsDQU2_U7zG6Z-gJy3hcXL5iCQDdE-td/pub?output=csv';
         
         // 2. Link Apps Script (Cái cũ) - Chỉ dùng để GỬI ĐƠN HÀNG
         const orderScriptURL = 'https://script.google.com/macros/s/AKfycbyhZljf1i_2WQBKxvwWsB6_ur9zY5jbf1b_ZGdf4VxiYyhP9AMG8Msr3n-B5PskxDPFew/exec';
@@ -70,7 +70,7 @@
 
         // Khi web tải, dùng PapaParse đọc file CSV ngay lập tức
         window.addEventListener('load', () => {
-            if(csvURL.includes('https://docs.google.com/spreadsheets/d/e/2PACX-1vS6s4y9_SI1hcKevWCe2QngT5j5h7027tTreV691bNtuf26KsDQU2_U7zG6Z-gJy3hcXL5iCQDdE-td/pub?gid=2000325905&single=true&output=tsv')) {
+            if(csvURL.includes('https://docs.google.com/spreadsheets/d/e/2PACX-1vS6s4y9_SI1hcKevWCe2QngT5j5h7027tTreV691bNtuf26KsDQU2_U7zG6Z-gJy3hcXL5iCQDdE-td/pub?output=csv')) {
                 loadingMsg.innerText = 'Bạn chưa dán link CSV vào code!';
                 return;
             }
